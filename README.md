@@ -43,7 +43,8 @@ Due to bot-limitations, it is currently limited to searching based on querying G
 To run the script, alter the following variables defined at the top of the script:
 - `firstRun`: should typically be set to `True`, unless you want to re-run a script to append data to existing output files
 - `filePrefix`: a prefix which is used to uniquely name the various CSV outputs relating to the current search, e.g. `game-studies`
-- `searchQueries`: a Python list of strings to form the basis of author queries, e.g. `['game_studies','gamification']`
+- `queryType`: determines the kind of query - either **keyword** (e.g. a tag or name) or **scholar_id** to retrieve data for a known list of Google Schoalr profile identifiers
+- `searchQueries`: a Python list of strings to form the basis of author queries, e.g. `['game_studies','gamification']` or `['rOcL0NgAAAAJ','ysa30PIAAAAJ']`
 
 Running the script will then produce the following CSV outputs:
 - **authors**: Authors matching the query

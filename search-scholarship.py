@@ -18,29 +18,10 @@ import csv
 
 
 # configuration
-firstRun = False                     # [True | False] denotes if this is the first time this script is being run to perform lookups
+firstRun = False                    # [True | False] denotes if this is the first time this script is being run to perform lookups
 filePrefix = 'gs_manual'            # A prefix to use in file outputs
 queryType = 'scholarid'             # [scholarid | keyword]
-searchQueries = [
-'rOcL0NgAAAAJ',
-'ysa30PIAAAAJ',
-'ukqGldwAAAAJ',
-'SBiwC1YAAAAJ',
-'ZuS6pXIAAAAJ',
-'Ro_oTyEAAAAJ',
-'7E5UCmMAAAAJ',
-'tgT4gC4AAAAJ',
-'S8v6H2EAAAAJ',
-'E6VspgUAAAAJ',
-'W8ZZ65EAAAAJ',
-'RWMwY5sAAAAJ',
-'jmsUXNEAAAAJ',
-'qf91Uo4AAAAJ',
-'RX7xibwAAAAJ',
-'W3y0Pd0AAAAJ',
-'n-DxqCMAAAAJ',
-'BvHFgSwAAAAJ'
-]    # A list of queries to search
+searchQueries = []                  # A list of queries to search
 
 
 # setup the CSV output files based on whether this is the first time the script is being run
