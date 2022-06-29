@@ -1,0 +1,6 @@
+/venv
+.Rproj.user
+.RData
+.Rhistory
+/analysis/analysis.Rproj
+/working-data
