@@ -32,7 +32,7 @@ authors <- read_excel('../data/consolidated-data.xlsx',4) %>%
 author_tags <- read_excel('../data/consolidated-data.xlsx',5) %>%
   distinct() %>%
   mutate(tag2 = str_to_title(tag)) %>%
-  left_join(read_csv('tag-recoding.csv',col_names = c('tag','recoding'))) %>%
+  left_join(read_csv('tag-recoding.csv',col_names = c('tag2','recoding'))) %>%
   mutate(codedTag = ifelse(is.na(recoding),tag2,recoding))
 
 # author_cites_per_year = number of citations across all of an author's publications
@@ -133,6 +133,7 @@ manual_authors <- read_csv('manual-name-scholar-ids.csv')
 reds <- brewer.pal(3,'Reds')
 blues <- brewer.pal(3,'Blues')
 purples <- brewer.pal(3,'Purples')
+greens <- brewer.pal(3,'Greens')
 
 
 
@@ -177,13 +178,13 @@ genderData <- gameStudiesAuthors %>%
   count(gender) %>%
   filter(!is.na(gender)) %>%
   mutate(pct = n/sum(n)) %>%
-  mutate(type = 'Number of\nSelf-identifying Authors') %>%
+  mutate(type = 'Authors Self-Identifying\nas "Games Studies"') %>%
   bind_rows(
     gameArticleAuth %>%
       count(gender) %>%
       filter(!is.na(gender)) %>%
       mutate(pct = n/sum(n)) %>%
-      mutate(type = 'Number of\nAuthored Publications')
+      mutate(type = 'Publication\nAuthorship')
   ) %>%
   bind_rows(
     gameArticleAuth %>%
@@ -191,7 +192,7 @@ genderData <- gameStudiesAuthors %>%
       count(gender) %>%
       filter(!is.na(gender)) %>%
       mutate(pct = n/sum(n)) %>%
-      mutate(type = 'Number of First\nAuthor Publications')
+      mutate(type = 'Publication\nFirst Authors')
   ) %>%
   bind_rows(
     gameArticleAuth %>%
@@ -199,7 +200,7 @@ genderData <- gameStudiesAuthors %>%
       summarise(n = sum(pub_citations,na.rm = TRUE)) %>%
       filter(!is.na(gender)) %>%
       mutate(pct = n/sum(n)) %>%
-      mutate(type = 'Number of\nCitations')
+      mutate(type = 'Citations\n(Total)')
   ) %>%
   bind_rows(
     gameArticleAuth %>%
@@ -208,13 +209,13 @@ genderData <- gameStudiesAuthors %>%
       summarise(n = sum(pub_citations,na.rm = TRUE)) %>%
       filter(!is.na(gender)) %>%
       mutate(pct = n/sum(n)) %>%
-      mutate(type = 'Number of First\nAuthor Citations')
+      mutate(type = 'Citations\n(First Author)')
   ) %>%
-  mutate(type = factor(type,levels = c('Number of\nSelf-identifying Authors',
-                                       'Number of\nAuthored Publications',
-                                       'Number of First\nAuthor Publications',
-                                       'Number of\nCitations',
-                                       'Number of First\nAuthor Citations')))
+  mutate(type = factor(type,levels = c('Authors Self-Identifying\nas "Games Studies"',
+                                       'Publication\nAuthorship',
+                                       'Publication\nFirst Authors',
+                                       'Citations\n(Total)',
+                                       'Citations\n(First Author)')))
 
 
 # plot splits
@@ -270,7 +271,7 @@ genderData2 <- article_cites_per_year %>%
   summarise(n = sum(citations,na.rm = TRUE)) %>%
   filter(!is.na(gender)) %>%
   mutate(pct = n/sum(n)) %>%
-  mutate(type = 'Cited Articles') %>%
+  mutate(type = 'Number of Citations') %>%
   bind_rows(
     gameArticles %>%
       inner_join(article_author) %>%
@@ -283,15 +284,18 @@ genderData2 <- article_cites_per_year %>%
       mutate(pct = n/sum(n)) %>%
       rename(year = pub_year) %>%
       mutate(type = 'Number of Publications')
-  )
+  ) %>%
+  mutate(type = factor(type,levels = c('Number of Publications','Number of Citations')))
 
+pinks <- brewer.pal(3,'PuRd')
 genderData2 %>% filter(gender == 'Female' & year >= 2001 & year <= 2021) %>%
   ggplot(aes(year,pct,colour = type,label = scales::percent(pct,accuracy = 1))) +
   geom_line(size=1) +
   geom_text(data = . %>% filter(year == 2021),vjust = c(-1,-1), size = 4, show.legend = FALSE) +
   geom_point(data = . %>% filter(year == 2021),size = 4, show.legend = FALSE) +
-  theme_hc() +
+  scale_colour_manual(values = c(purples[2],pinks[2])) +
   scale_y_continuous(labels = percent_format()) +
+  theme_minimal() +
   labs(
     title = 'Female Game Studies Scholarship, 2001-2021',
     subtitle = 'Proportion of First-Author Articles by Females: Publications per year // Citations per year',
@@ -317,9 +321,10 @@ data <- gameStudyAuthorTags %>%
 # get overall counts and filter to those with at least 11 
 overallCounts <- data %>%
   count(codedTag) %>%
-  filter(n >= 11) %>%
   mutate(tag2 = str_wrap(codedTag,8)) %>%
   mutate(pctOverall = n/nrow(gameStudiesAuthors)) %>%
+  slice_max(n,n=13) %>%
+  filter(codedTag != 'Interaction Design') %>% # to keep the plot legible
   arrange(desc(n))
 
 # split the data for each tag based on gender
@@ -332,7 +337,7 @@ data <- data %>%
   left_join(overallCounts, by = 'codedTag') %>%
   mutate(tag2 = factor(tag2,levels = overallCounts$tag2))
 
-# plot dat
+# plot data
 ggplot(data,aes(tag2,n2,fill=gender)) + 
   geom_col() +
   geom_text(
@@ -340,6 +345,7 @@ ggplot(data,aes(tag2,n2,fill=gender)) +
     data = data %>% filter(gender == 'Female'),
     vjust = -.5,
     colour = reds[3]) +
+  scale_fill_manual(values = c(reds[3],blues[3])) +
   theme_hc() +
   labs(
     title = 'Additional Google Scholar Tags used by Game Studies Academics',
@@ -373,11 +379,12 @@ top30Data <- top30ScholarIds %>%
   select(scholar_id,citations,name,gender,continent)
 
 # plot
-top30Data %>% ggplot(aes(fct_reorder(name,citations,.desc = TRUE),citations,fill=gender)) +
+top30Data %>% ggplot(aes(fct_reorder(name,citations),citations,fill=gender)) +
   geom_col() +
   scale_y_continuous(labels = comma_format()) +
   coord_flip() +
   theme_hc() +
+  scale_fill_manual(values = c(reds[3],blues[3])) +
   labs(
     title = 'Top 30 Most Cited Game Studies Authors',
     fill = NULL,
@@ -407,7 +414,7 @@ geoData <- geoData %>%
 
 # plot data
 ggplot(geoData,aes(fct_reorder(str_wrap(country,12),citations,.desc = TRUE),citations)) +
-  geom_col(fill = blues[3]) +
+  geom_col(fill = greens[3]) +
   scale_y_continuous(labels = comma_format()) +
   theme_hc() +
   labs(
@@ -418,14 +425,14 @@ ggplot(geoData,aes(fct_reorder(str_wrap(country,12),citations,.desc = TRUE),cita
 
 
 
-###############################################################
-## NETWORK ANALYSIS OF CO-OCCURING GOOGLE SCHOLAR PROFILE TAGS
-###############################################################
+################################################################
+## NETWORK ANALYSIS OF CO-OCCURRING GOOGLE SCHOLAR PROFILE TAGS
+################################################################
 
 # create a bipartite network of scholars and tags
 # assemble a single set of vertices representing either authors or tags
 vAuthors <- gameArticleAuth %>%
-  filter(order == 1) %>%
+  #filter(order == 1) %>%
   select(scholar_id,gender,citedby,citedby5y,country,continent) %>%
   distinct() %>%
   mutate(id = paste0('a',as.character(row_number()))) %>%
@@ -510,7 +517,7 @@ tagGraph %>%
 
 vAuthors <- authors %>%
   select(scholar_id,name,gender,citedby,citedby5y,country,continent) %>%
-  filter(scholar_id %in% gameArticleAuthByTop30$scholar_id) %>%
+  #filter(scholar_id %in% gameArticleAuthByTop30$scholar_id) %>%
   distinct() %>%
   mutate(id = paste0('a',as.character(row_number()))) %>%
   mutate(gender = ifelse(is.na(gender),'Unspecified',gender)) %>%
@@ -518,7 +525,7 @@ vAuthors <- authors %>%
   mutate(type = FALSE)
 
 vArticles <- gameArticles %>%
-  filter(cite_id %in% gameArticleAuthByTop30$cite_id) %>%
+  #filter(cite_id %in% gameArticleAuthByTop30$cite_id) %>%
   select(cite_id) %>%
   mutate(name = cite_id) %>%
   distinct() %>%
@@ -528,7 +535,7 @@ vArticles <- gameArticles %>%
 vertices = vAuthors %>%
   bind_rows(vArticles)
 
-edges <- gameArticleAuthByTop30 %>%
+edges <- gameArticleAuth %>%
   inner_join(vArticles, by = 'cite_id') %>%
   inner_join(vAuthors, by = 'scholar_id') %>%
   rename(from = id.x, to = id.y) %>%
@@ -564,11 +571,11 @@ authorGraph %>%
     alpha = 0.5,
     show.legend = FALSE
   ) +
-  geom_node_text(aes(filter=allDegree > 12,label = str_wrap(name,12)), size = 4) +
+  geom_node_text(aes(filter=allDegree > 15,label = str_wrap(name,12)), size = 4) +
   scale_colour_brewer(palette = 'Dark2') +
   theme_graph()
 
-
+write_graph(authorGraph,'c:/temp/co-author.graphml',format = 'graphml')
 
 #################
 ## MODEL NETWORK
