@@ -18,10 +18,10 @@ import csv
 
 
 # configuration
-firstRun = False                    # [True | False] denotes if this is the first time this script is being run to perform lookups
-filePrefix = 'gs_manual'            # A prefix to use in file outputs
-queryType = 'scholarid'             # [scholarid | keyword]
-searchQueries = []                  # A list of queries to search
+firstRun = True                    # [True | False] denotes if this is the first time this script is being run to perform lookups
+filePrefix = 'cult_soc'            # A prefix to use in file outputs
+queryType = 'keyword'             # [scholarid | keyword]
+searchQueries = ['cultural_sociology']                  # A list of queries to search
 
 
 # setup the CSV output files based on whether this is the first time the script is being run
@@ -80,7 +80,7 @@ for queryTerm in searchQueries:
     if queryType == 'scholarid':
         query = [scholarly.search_author_id(queryTerm)]
     else:
-        scholarly.search_keyword(queryTerm)
+        query = scholarly.search_keyword(queryTerm)
 
     for author in query:
         if author['scholar_id'] in processedScholarIds:
@@ -126,7 +126,7 @@ for queryTerm in searchQueries:
                 wAuthCoauthors.writerow([scholar_id,coauthor['scholar_id'],coauthor['name']])
         
         if 'publications' in author:
-            print("--" + len(author['publications']) + " publications")
+            print("--" + str(len(author['publications'])) + " publications")
             for pub in author['publications']:
                 if 'cites_id' in pub and len(pub['cites_id']) > 0:
                     citeId = pub['cites_id'][0]
